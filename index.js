@@ -30,7 +30,10 @@ app.get('/', (req, res) => {
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect(err => {
+
   const appointmentCollection = client.db("covid-19BD").collection("appointment");
+  const doctorCollection = client.db("covid-19BD").collection("service");
+
 
   app.post('/addAppointment', (req, res) => {
     const appointment = req.body;
@@ -39,6 +42,7 @@ client.connect(err => {
         res.send(result.insertedCount > 0);
       })
   });
+
 
 
   app.post('/appointmentByDate', (req, res) => {
@@ -50,34 +54,31 @@ client.connect(err => {
       })
   });
 
-  app.post('/addAService', (req, res) => {
+
+
+  app.post('/addService', (req, res) => {
     const file = req.files.file;
     const name = req.body.name;
     const email = req.body.email;
-    console.log(file, name, email)
-    file.mv(`${__dirname}/serivec/${file.name}`, err => {
+    const newImg = file.data;
+    const encImg = newImg.toString('base64');
 
-      if(err){
-        console.log(err)
-        return res.status(500).send({messg : 'failed upload img' })
-      }
-      return res.send({name: file.name, path: `/${file.name}`})
-    });
+    var image = {
+        contentType: file.mimetype,
+        size: file.size,
+        img: Buffer.from(encImg, 'base64')
+    };
 
+    doctorCollection.insertOne({ name, email, image })
+        .then(result => {
+            res.send(result.insertedCount > 0);
+        })
+})
 
-
-    app.get('/service', (req, res) => {
-      doctorCollection.find({})
-          .toArray((err, documents) => {
-              res.send(documents);
-          })
-  });
-   
     
 
 
 
-    })
 
 });
 
